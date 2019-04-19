@@ -1,4 +1,6 @@
 *.dSYM
 *.o
+*.a
 main
 .vscode
+.DS_Store
