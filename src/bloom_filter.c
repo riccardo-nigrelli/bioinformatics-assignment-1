@@ -1,104 +1,119 @@
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <stdio.h>
 #include <string.h>
-#include <pds/hash_function.h>
+#include <stdlib.h>
 #include "bloom_filter_private.h"
 
-bloom_filter_t bloom_filter_create(int const dimension) {
+#if defined(unix) || defined(__unix__) || defined(__unix)
+	#include <stdint.h>
+#endif
 
-	if ( dimension >= 0) {
+#define BITS_PER_UINT64_T 64
 
-		int i;
+bloom_filter_t bloom_filter_create(size_t dimension, unsigned int (**hash_function)(char *, unsigned int), int num_hash_function) {
+	if ( dimension >= 0 ) {
+
+		size_t i;
 		bloom_filter_t bloom_filter = malloc(sizeof(struct bloom_filter_s));
-
-		if ( bloom_filter == NULL) {
+		if ( bloom_filter == NULL ) {
 			perror("Unable to create a bloom filter");
 			abort();
 		}
 
-		bloom_filter->bit_vector = NULL;
+    bloom_filter->bit_vector = NULL;
 
-		if ( dimension > 0 ) {
-
-			bloom_filter->bit_vector = (int *) malloc(dimension * sizeof(int));
-
-			if ( bloom_filter->bit_vector == NULL ) {
+    if ( dimension > 0 ) {
+      
+      bloom_filter->bit_vector = (uint64_t *) malloc(dimension * sizeof(uint64_t));
+      if ( bloom_filter->bit_vector == NULL ) {
 				perror("Unable to create a bit vector");
 				abort();
-			}
+      }
 
-			for ( i = 0; i < dimension; i++ ) 
-				bloom_filter->bit_vector[i] = 0;
-		}
+      for ( i = 0; i < dimension; i++ ) bloom_filter->bit_vector[i] = 0;
+    }
 
-		bloom_filter->dimension = dimension;
-		return bloom_filter;
+    bloom_filter->dimension = dimension;
+    bloom_filter->hash_function = hash_function;
+    bloom_filter->num_hash_function = num_hash_function;
+
+    return bloom_filter;
 	}
 	else return NULL;
 }
 
 int bloom_filter_destroy(bloom_filter_t bloom_filter) {
+  
+  if ( bloom_filter != NULL ) {
 
-	if ( bloom_filter != NULL) {
+    free(bloom_filter->bit_vector);
+    free(bloom_filter);
+    return 1;
+  }
 
-		free(bloom_filter->bit_vector);
-		free(bloom_filter);
-
-		return 1;	
-	}
-
-	return -1;
+  return -1;
 }
 
-int bloom_filter_add(bloom_filter_t bloom_filter, const char *kmer) {
-
-	if ( bloom_filter != NULL ) {
-		size_t index_first_hash; //, index_second_hash;
-
-		index_first_hash = murmurhash2(kmer, strlen(kmer), 0x14570c6f) % bloom_filter->dimension;
-		// fibonacci_hash_3_bits(sizeof(kmer)); 
-		// djb2(kmer, bloom_filter->dimension);
-		// index_second_hash = jenkins(kmer, bloom_filter->dimension);
-
-		if ( bloom_filter->bit_vector[index_first_hash] == 1 ) {
-			printf("COLLISIONE del kmer '%s' in posizione %zu\n", kmer, index_first_hash);
-			return 0;
-		}
-		// else if ( bloom_filter->bit_vector[index_second_hash] == 1 ) {
-		// 	printf("COLLISIONE in posizione %u\n", index_second_hash);
-		// 	return 0;
-		// }
-		else {
-			bloom_filter->bit_vector[index_first_hash] = 1;
-			// bloom_filter->bit_vector[index_second_hash] = 1;
-			return 1;
-		}
-	}
-
-	return -1;
+static void write_bit_impl(uint64_t* word, size_t bit_index) {
+  *word |= ((uint64_t) 1) << bit_index;
 }
 
-int bloom_filter_get(bloom_filter_t bloom_filter, const char *kmer) {
+static void write_bit(uint64_t* array, size_t bit_index) {
 
-	if ( bloom_filter != NULL ) {
-		size_t index_first_hash; //, index_second_hash;
-
-		index_first_hash = murmurhash2(kmer, strlen(kmer), 0x9747b28c) % bloom_filter->dimension;
-		// fibonacci_hash_3_bits(sizeof(kmer)); 
-		// djb2(kmer, bloom_filter->dimension);
-		// index_second_hash = jenkins(kmer, bloom_filter->dimension);
-
-		if ( bloom_filter->bit_vector[index_first_hash] == 1 ) // && bloom_filter->bit_vector[index_second_hash] == 1
-			return index_first_hash;
-		else 
-			return 0;
-	}
-
-	return -1;
+  size_t word_index = bit_index / BITS_PER_UINT64_T;
+  uint64_t* integer = &array[word_index];
+  write_bit_impl(integer, bit_index % BITS_PER_UINT64_T);
 }
 
-int bloom_filter_get_element(bloom_filter_t bloom_filter, int index) {
-	return (bloom_filter != NULL) ? bloom_filter->bit_vector[index] : -1;
+static int read_bit_impl(uint64_t* word, size_t bit_index) {
+  
+  size_t i;
+  uint64_t integer = 1;
+
+  for (i = 0; i != bit_index; ++i)
+    integer <<= 1;
+
+  return ((*word & integer) != 0) ? 1 : 0;
+}
+
+int bloom_filter_add(bloom_filter_t bloom_filter, char *element) {
+
+  if ( bloom_filter != NULL ) {
+
+    size_t i, index, total;
+
+    total = bloom_filter->dimension * BITS_PER_UINT64_T;
+
+    for ( i = 0; i != bloom_filter->num_hash_function ; i++ ) {
+      index = bloom_filter->hash_function[i](element, strlen(element)) % total;
+      write_bit(bloom_filter->bit_vector, index);
+    }
+  }
+
+  return -1;
+}
+
+static int read_bit(uint64_t* array, size_t bit_index) {
+
+  size_t word_index = bit_index / BITS_PER_UINT64_T;
+  uint64_t* integer = &array[word_index];
+  return read_bit_impl(integer, bit_index % BITS_PER_UINT64_T);
+}
+
+int bloom_filter_get(bloom_filter_t bloom_filter, char* element) {
+
+  if ( bloom_filter != NULL ) {
+    size_t i, index, total;
+    
+    total = bloom_filter->dimension * BITS_PER_UINT64_T;
+
+    for ( i = 0; i != bloom_filter->num_hash_function; ++i ) {
+      index = bloom_filter->hash_function[i](element, strlen(element)) % total;
+      
+      if ( !read_bit(bloom_filter->bit_vector, index) ) return 0;
+    }
+
+    return 1;
+  }
+  
+  return -1;
 }
