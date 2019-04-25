@@ -4,3 +4,5 @@
 main
 .vscode
 .DS_Store
+*.dot
+*.pdf
