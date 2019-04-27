@@ -1,10 +1,10 @@
-CFLAGS+=-Wall -Wextra -std=c11 -pedantic -I"$(PWD)/include"
+CFLAGS+=-Wall -Wtype-limits -Wextra -std=c11 -pedantic -I"$(PWD)/include" -I/usr/include/python2.7 -lpython2.7 
 
 export CFLAGS
 
-.PHONY: all apps bin clean test
+.PHONY: all apps bin clean
 
-all: bin apps test
+all: bin apps
 
 bin:
 	cd bin && $(MAKE) all
@@ -12,10 +12,7 @@ bin:
 apps: bin
 	cd app && $(MAKE) all
 
-test: bin
-	cd test && $(MAKE) all
-
 clean:
 	cd bin && $(MAKE) clean
 	cd app && $(MAKE) clean
-	cd test && $(MAKE) clean
+	cd src/prepros && $(RM) *.pyc
