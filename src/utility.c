@@ -9,13 +9,13 @@ char* substr(const char *string, size_t start, size_t end) {
   const char *char_start = &string[start];
   const char *char_end = &string[end];
   
-  char *substr = (char *) calloc(1, char_end - char_start + 1);
-  memcpy(substr, char_start, char_end - char_start + 1);
+  char *substring = (char *) calloc(1, char_end - char_start + 1);
+  memcpy(substring, char_start, char_end - char_start + 1);
 
-	return substr;
+	return substring;
 } 
 
-char** kmer_concat(const char *kmer, const char *base) {
+char** kmer_append(const char *kmer, const char *base) {
 
 	int i;
 	char **edge = malloc(BASE * sizeof(char *));
@@ -30,6 +30,29 @@ char** kmer_concat(const char *kmer, const char *base) {
 	return edge;
 }
 
+static char *concatenate_char_str(char prefix, const char *str) { 
+	
+	char *ret = malloc(1 + strlen(str) + 1); 
+	ret[0] = prefix; 
+	strcpy(ret + 1, str); 
+	
+	return ret; 
+}
+
+char** kmer_prepend(const char *kmer, const char *base) {
+
+	int i;
+	char **edge = malloc(BASE * sizeof(char *));
+
+	for ( i = 0; i < BASE; i++ ) {
+		edge[i] = malloc((strlen(kmer) + 1) * sizeof(char *));
+		edge[i] = concatenate_char_str(base[i], kmer);
+	}
+
+	return edge;
+}
+
+/* Function for check if the graph is correct */
 int find_element(char **array, char *string, int num_element) {
 
 	int i, flag = 0;
@@ -42,4 +65,17 @@ int find_element(char **array, char *string, int num_element) {
 	}
 
 	return flag;
+}
+
+void help_menu() {
+	
+	printf("Usage: ./app/main [options] | [settings] <value>\n\n");
+	printf("Options:\n");
+	printf("  --help\t\toutput usage information\n");
+	printf("  --default\t\trun the program using default values\n\n");
+	printf("Settings:\n");
+	printf("  -q, --quality\t\tthe quality value\n");
+	printf("  -r, --reads-length\tthe minimum length for the reads\n");
+	printf("  -k, --kmer-length\tthe length for the k-mer\n\n");
+	printf("  -f, --reads-file\tabsolute path of FASTQ file\n\n");
 }
