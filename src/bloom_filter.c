@@ -4,20 +4,20 @@
 #include "bloom_filter_private.h"
 
 #if defined(unix) || defined(__unix__) || defined(__unix)
-	#include <stdint.h>
+  #include <stdint.h>
 #endif
 
 #define BITS_PER_UINT64_T 64
 
 bloom_filter_t bloom_filter_create(size_t dimension, unsigned int (**hash_function)(char *, unsigned int), int num_hash_function) {
-	if ( dimension >= 0 ) {
+  if ( dimension >= 0 ) {
 
-		size_t i;
-		bloom_filter_t bloom_filter = malloc(sizeof(struct bloom_filter_s));
-		if ( bloom_filter == NULL ) {
-			perror("Unable to create a bloom filter");
-			abort();
-		}
+    size_t i;
+    bloom_filter_t bloom_filter = malloc(sizeof(struct bloom_filter_s));
+    if ( bloom_filter == NULL ) {
+      perror("Unable to create a bloom filter");
+      abort();
+    }
 
     bloom_filter->bit_vector = NULL;
 
@@ -25,8 +25,8 @@ bloom_filter_t bloom_filter_create(size_t dimension, unsigned int (**hash_functi
       
       bloom_filter->bit_vector = (uint64_t *) malloc(dimension * sizeof(uint64_t));
       if ( bloom_filter->bit_vector == NULL ) {
-				perror("Unable to create a bit vector");
-				abort();
+        perror("Unable to create a bit vector");
+        abort();
       }
 
       for ( i = 0; i < dimension; i++ ) bloom_filter->bit_vector[i] = 0;
@@ -37,8 +37,8 @@ bloom_filter_t bloom_filter_create(size_t dimension, unsigned int (**hash_functi
     bloom_filter->num_hash_function = num_hash_function;
 
     return bloom_filter;
-	}
-	else return NULL;
+  }
+  else return NULL;
 }
 
 int bloom_filter_destroy(bloom_filter_t bloom_filter) {
