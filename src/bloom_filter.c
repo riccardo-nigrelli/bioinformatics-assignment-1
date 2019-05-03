@@ -10,7 +10,8 @@
 #define BITS_PER_UINT64_T 64
 
 bloom_filter_t bloom_filter_create(size_t dimension, unsigned int (**hash_function)(char *, unsigned int), int num_hash_function) {
-  if ( dimension >= 0 ) {
+  
+  if ( hash_function != NULL && num_hash_function > 0 ) {
 
     size_t i;
     bloom_filter_t bloom_filter = malloc(sizeof(struct bloom_filter_s));
