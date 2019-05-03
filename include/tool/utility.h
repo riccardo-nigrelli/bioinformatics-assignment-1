@@ -23,5 +23,7 @@
    * @brief 
    */ 
   void help_menu();
+  
+  char* parse_argument(int argc, char **argv, int *quality, int *kmer_length, int *reads_length);
 
-#endif
+#endif /* UTILITY_H */
