@@ -55,7 +55,7 @@ void hash_table_clear(hash_table_t hash_table) {
       while ( list != NULL ) {
         hash_table_list_node_t *node = list;
         list = list->next;
-
+        
         free(node);
       }
 
@@ -75,11 +75,11 @@ unsigned int hash_table_put(hash_table_t hash_table, char *key, unsigned int val
     size_t hash = hash_table->key_hash(key, hash_table->capacity);
     hash_table_list_node_t *node = hash_table->slots[hash].head;
 
-    while ( node != NULL && key != node->key ) node = node->next;
+    while ( node != NULL && strcmp(key, node->key) ) node = node->next;
 
     if ( node == NULL ) {
       node = malloc(sizeof(hash_table_list_node_t));
-      node->key = key;
+      node->key = strdup(key);
       node->value = value;
       node->next = hash_table->slots[hash].head;
       hash_table->slots[hash].head = node;
@@ -103,12 +103,34 @@ unsigned int hash_table_get(hash_table_t hash_table, char *key) {
     size_t hash = hash_table->key_hash(key, hash_table->capacity);
     hash_table_list_node_t *node = hash_table->slots[hash].head;
 
-    while ( node != NULL && key != node->key ) node = node->next;
+    while ( node != NULL && strcmp(key, node->key) ) node = node->next;
 
     if ( node != NULL ) return node->value;
   }
 
   return 0;
+}
+
+void upo_ht_sepchain_delete(hash_table_t hash_table, char *key) {
+  
+  if ( hash_table != NULL && hash_table->slots != NULL ) {
+    
+    size_t hash = hash_table->key_hash(key, hash_table->capacity);
+    hash_table_list_node_t *ptr = NULL, *node = hash_table->slots[hash].head;
+
+    while ( node != NULL && strcmp(key, node->key) ) {
+      ptr = node;
+      node = node->next;
+    }
+    
+    if ( node != NULL ) {
+      if ( ptr == NULL ) hash_table->slots[hash].head = node->next;
+      else ptr->next = node->next;
+
+      hash_table->size--;
+      free(node);
+    }
+  }
 }
 
 int hash_table_contains(hash_table_t hash_table, char *key) {
@@ -119,40 +141,6 @@ size_t hash_table_size(hash_table_t hash_table) {
   return (hash_table != NULL && hash_table->slots != NULL) ? hash_table->size : 0;
 }
 
-hash_table_key_list_t hash_table_keys(hash_table_t hash_table) {
-  
-  hash_table_key_list_t list, tail, p;
-  list = tail = NULL;
-
-  if ( hash_table != NULL && hash_table->slots != NULL ) {
-
-    size_t index = 0;
-    while ( index < hash_table->capacity ) {
-
-      hash_table_list_node_t * node = hash_table->slots[index].head;
-      while ( node != NULL ) {
-        
-        p = malloc(sizeof(hash_table_key_list_node_t));
-        p->key = node->key;
-
-        if ( node != NULL ) {
-          list = tail = p;
-        }
-        else {
-          tail->next = p;
-          tail = p;
-        }
-
-        node = node->next;
-      }
-
-      index++;
-    }
-  }
-
-  return list;
-}
-
 int str_compare(const void* a, const void* b) {
 
   const char* aa = a;
@@ -161,7 +149,7 @@ int str_compare(const void* a, const void* b) {
   return strcmp(aa, bb);
 }
 
-size_t upo_ht_hash_str(const void* x, size_t h0, size_t a, size_t m) {
+size_t hash_table_hash_str(const void* x, size_t h0, size_t a, size_t m) {
     
   const char* s = x;
   size_t h = h0; 
@@ -175,6 +163,6 @@ size_t upo_ht_hash_str(const void* x, size_t h0, size_t a, size_t m) {
   return h;
 }
 
-size_t upo_ht_hash_str_kr2e(const void* x, size_t m) {
-  return upo_ht_hash_str(x, 0U, 31U, m);
+size_t hash_table_str_kr2e(const void* x, size_t m) {
+  return hash_table_hash_str(x, 0U, 31U, m);
 }
