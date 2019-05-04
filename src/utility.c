@@ -138,7 +138,7 @@ char* parse_argument(int argc, char **argv, int *quality, int *kmer_length, int 
         break;
 
       case 'f':
-        path_file = malloc(strlen(optarg) * sizeof(char));
+        path_file = malloc(strlen(optarg) + 1 * sizeof(char));
         if ( path_file == NULL ) {
           perror("Unable to allocate memory for a string");
           abort();
@@ -151,7 +151,7 @@ char* parse_argument(int argc, char **argv, int *quality, int *kmer_length, int 
         *reads_length = READS_LENGTH_DEFAULT;
         *kmer_length = KMER_LENGTH_DEFAULT;
         
-        path_file = malloc(strlen(PATH_READS_DEFAULT) * sizeof(char));
+        path_file = malloc(strlen(PATH_READS_DEFAULT) + 1 * sizeof(char));
         if ( path_file == NULL ) {
           perror("Unable to allocate memory for a string");
           abort();
