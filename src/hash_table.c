@@ -56,6 +56,7 @@ void hash_table_clear(hash_table_t hash_table) {
         hash_table_list_node_t *node = list;
         list = list->next;
         
+        free(node->key);
         free(node);
       }
 
@@ -79,7 +80,9 @@ unsigned int hash_table_put(hash_table_t hash_table, char *key, unsigned int val
 
     if ( node == NULL ) {
       node = malloc(sizeof(hash_table_list_node_t));
-      node->key = strdup(key);
+      /* node->key = strdup(key); */
+      node->key = malloc(strlen(key) * sizeof(char *));
+      strcpy(node->key, key);
       node->value = value;
       node->next = hash_table->slots[hash].head;
       hash_table->slots[hash].head = node;
@@ -131,6 +134,42 @@ void upo_ht_sepchain_delete(hash_table_t hash_table, char *key) {
       free(node);
     }
   }
+}
+
+hash_table_key_list_t hash_table_keys(hash_table_t hash_table) {
+  
+  hash_table_key_list_t list, tail, p;
+  list = tail = NULL;
+
+  if ( hash_table != NULL && hash_table->slots != NULL ) {
+
+    size_t index = 0;
+    while ( index < hash_table->capacity ) {
+
+      hash_table_list_node_t *node = hash_table->slots[index].head;
+      while ( node != NULL ) {
+        
+        p = malloc(sizeof(hash_table_key_list_node_t));
+        /* p->key = strdup(node->key); */
+        p->key = malloc(strlen(node->key) * sizeof(char *));
+        strcpy(p->key, node->key);
+
+        if ( list == NULL ) {
+          list = tail = p;
+        }
+        else { 
+          tail->next = p;
+          tail = p;
+        }
+
+        node = node->next;
+      }
+
+      index++;
+    }
+  }
+  
+  return list; 
 }
 
 int hash_table_contains(hash_table_t hash_table, char *key) {
