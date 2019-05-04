@@ -114,7 +114,7 @@ unsigned int hash_table_get(hash_table_t hash_table, char *key) {
   return 0;
 }
 
-void upo_ht_sepchain_delete(hash_table_t hash_table, char *key) {
+void hash_table_delete(hash_table_t hash_table, char *key) {
   
   if ( hash_table != NULL && hash_table->slots != NULL ) {
     
