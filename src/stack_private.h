@@ -17,5 +17,4 @@
     size_t size;
   };
 
-
 #endif /* STACK_PRIVATE_H */
