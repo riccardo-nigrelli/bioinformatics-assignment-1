@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "stack_private.h"
 
 
@@ -25,11 +26,13 @@ void stack_destroy(sstack_t stack) {
   }
 }
 
-void stack_push(sstack_t stack, int data){ 
+void stack_push(sstack_t stack, char *data) {
   
   if( stack != NULL ) {
     stack_node_t *node= malloc(sizeof(stack_node_t));
-    node->data = data;
+    node->data = malloc(strlen(data) + 1);
+    strcpy(node->data, data);
+
     node->next = stack->top;
 
     stack->top = node;
@@ -37,17 +40,27 @@ void stack_push(sstack_t stack, int data){
   }
 }
 
-int stack_pop(sstack_t stack) {
+char* stack_pop(sstack_t stack) {
 
-  int value = -1;
+  char *value = NULL;
 
   if( stack != NULL ) {
-    if( stack_is_empty(stack) != 1 ){
+
+    if( !stack_is_empty(stack)) {
+
       stack_node_t *tmp = stack->top;
-      value = stack->top->data;
-      /* free(stack->top->data); */
-      stack->top = stack->top->next;
+      value = malloc(sizeof(stack->top->data) + 1);
+      if ( value != NULL ) {
+        fprintf(stderr, "Unable to allocate the data");
+        abort();
+      }
+
+      strcpy(value, stack->top->data);
+      free(stack->top->data);
+
+      stack->top=stack->top->next;
       free(tmp);
+      
       stack->size--;
     }
   }
@@ -55,12 +68,12 @@ int stack_pop(sstack_t stack) {
   return value;
 }
 
-int stack_top(const sstack_t stack) {
+char* stack_top(const sstack_t stack) {
 
   if( stack != NULL && stack->top != NULL)
     return stack->top->data;
   
-  return -1;
+  return NULL;
 }
 
 int stack_is_empty(const sstack_t stack) {
@@ -75,7 +88,7 @@ size_t stack_size(const sstack_t stack) {
 
 void stack_clear(sstack_t stack) {
 
-  if( stack!=NULL ) {
+  if ( stack != NULL ) {
     while ( stack->size != 0 ) {
       stack_node_t *tmp = stack->top;
 
