@@ -15,4 +15,3 @@ apps: bin
 clean:
 	cd bin && $(MAKE) clean
 	cd app && $(MAKE) clean
-	cd src/prepros && $(RM) *.pyc
