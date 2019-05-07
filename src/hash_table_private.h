@@ -2,7 +2,7 @@
 
   #define HASH_TABLE_PRIVATE_H
 
-  #include <tool/hash_table.h>
+  #include <adt/hash_table.h>
 
   struct hash_table_list_node_s {
     char *key;
