@@ -6,7 +6,7 @@
   #include <adt/stack.h>
 
   struct stack_node_s {
-    char *data;
+    int data;
     struct stack_node_s* next;
   };
 

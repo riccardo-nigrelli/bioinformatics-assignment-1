@@ -67,9 +67,7 @@ void hash_table_clear(hash_table_t hash_table) {
   }
 }
 
-unsigned int hash_table_put(hash_table_t hash_table, char *key, unsigned int value) {
-
-  unsigned int current_value = 0;
+void hash_table_put(hash_table_t hash_table, char *key, unsigned int value) {
 
   if ( hash_table != NULL && hash_table->slots != NULL ) {
 
@@ -87,15 +85,11 @@ unsigned int hash_table_put(hash_table_t hash_table, char *key, unsigned int val
       hash_table->slots[hash].head = node;
       hash_table->size++;
 
-      return node->value;
     }
     else {
       node->value++;
-      return node->value;
     }
-  } 
-
-  return current_value;
+  }
 }
 
 unsigned int hash_table_get(hash_table_t hash_table, char *key) {
@@ -136,18 +130,13 @@ void hash_table_delete(hash_table_t hash_table, char *key) {
   }
 }
 
-int hash_table_contains(hash_table_t hash_table, char *key) {
-  return ( hash_table_get(hash_table, key) != 0 ) ? 1 : 0;
-}
-
 size_t hash_table_size(hash_table_t hash_table) {
   return (hash_table != NULL && hash_table->slots != NULL) ? hash_table->size : 0;
 }
 
 hash_table_key_list_t hash_table_keys(hash_table_t hash_table) {
   
-  hash_table_key_list_t list, tail; 
-  hash_table_key_list_node_t *p = NULL;
+  hash_table_key_list_t list, tail, p;
   list = tail = NULL;
 
   if ( hash_table != NULL && hash_table->slots != NULL ) {
@@ -164,8 +153,8 @@ hash_table_key_list_t hash_table_keys(hash_table_t hash_table) {
           abort();  
         }
 
-        p->key = malloc((strlen(node->key) + 1) * sizeof(char));
-        if ( p == NULL ) {
+        p->key = malloc((strlen(node->key) + 2) * sizeof(char));
+        if ( p->key == NULL ) {
           perror("Unable to allocate a key\n");
           abort();  
         }
@@ -185,6 +174,7 @@ hash_table_key_list_t hash_table_keys(hash_table_t hash_table) {
       }
       
       index++;
+      free(node);
     }
   }
 

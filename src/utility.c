@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <adt/stack.h>
+#include <adt/hash_table.h>
+#include <pds/bloom_filter.h>
+#include "utility_private.h"
 
 #define NUM_BASE 4
 #define KMER_LENGTH_DEFAULT 31
@@ -16,7 +20,7 @@ char* substr(const char *string, size_t start, size_t end) {
   const char *char_start = &string[start];
   const char *char_end = &string[end];
   
-  char *substring = (char *) calloc(1, char_end - char_start + 1);
+  char *substring = (char *) calloc(2, char_end - char_start + 1);
   memcpy(substring, char_start, char_end - char_start + 1);
 
   return substring;
@@ -37,14 +41,15 @@ char** kmer_append(const char *kmer) {
   return edge;
 }
 
+/*
 static char *concatenate_char_str(char prefix, const char *str) { 
   
-  char *ret = malloc(1 + strlen(str) + 1); 
+  char *ret = malloc(strlen(str) + 1); 
   ret[0] = prefix; 
   strcpy(ret + 1, str); 
   
   return ret; 
-}
+} */
 
 char** kmer_prepend(const char *kmer) {
 
@@ -52,26 +57,12 @@ char** kmer_prepend(const char *kmer) {
   char **edge = malloc(NUM_BASE * sizeof(char *));
 
   for ( i = 0; i < NUM_BASE; i++ ) {
-    edge[i] = malloc((strlen(kmer) + 1) * sizeof(char *));
-    edge[i] = concatenate_char_str(base_array[i], kmer);
+    edge[i] = malloc((strlen(kmer) + 2) * sizeof(char));
+    edge[i][0] = base_array[i];
+    strcpy((char *)&edge[i][1], kmer);
   }
 
   return edge;
-}
-
-/* Function for check if the graph is correct */
-int find_element(char **array, char *string, int num_element) {
-
-  int i, flag = 0;
-
-  for ( i = 0; i < num_element; i++ ) {
-    if (!strcmp(array[i], string)){
-      flag = 1;
-      break;
-    }
-  }
-
-  return flag;
 }
 
 void help_menu() {
@@ -83,7 +74,7 @@ void help_menu() {
   printf("Settings:\n");
   printf("  -q, --quality\t\tthe quality value\n");
   printf("  -r, --reads-length\tthe minimum length for the reads\n");
-  printf("  -k, --kmer-length\tthe length for the k-mer\n\n");
+  printf("  -k, --kmer-length\tthe length for the k-mer\n");
   printf("  -f, --reads-file\tabsolute path of FASTQ file\n\n");
 }
 
@@ -140,7 +131,7 @@ char* parse_argument(int argc, char **argv, int *quality, int *kmer_length, int 
       case 'f':
         path_file = malloc(strlen(optarg) + 1 * sizeof(char));
         if ( path_file == NULL ) {
-          perror("Unable to allocate memory for a string");
+          fprintf(stderr, "Unable to allocate memory for a string");
           abort();
         }
         strcpy(path_file, optarg);
@@ -153,7 +144,7 @@ char* parse_argument(int argc, char **argv, int *quality, int *kmer_length, int 
         
         path_file = malloc(strlen(PATH_READS_DEFAULT) + 1 * sizeof(char));
         if ( path_file == NULL ) {
-          perror("Unable to allocate memory for a string");
+          fprintf(stderr, "Unable to allocate memory for a string");
           abort();
         }
         strcpy(path_file, PATH_READS_DEFAULT);
@@ -170,4 +161,361 @@ char* parse_argument(int argc, char **argv, int *quality, int *kmer_length, int 
   }
 
   return path_file;
+}
+
+int index_from_element(hash_table_key_list_t key_list, char *node) {
+
+  if ( key_list != NULL ) {
+
+    int index = 0;
+
+    while ( key_list != NULL ) {
+
+      if ( !strcmp(key_list->key, node) )  break;
+
+      index++;
+      key_list = key_list->next;
+    }
+
+    return index;
+  }
+
+  return -1;
+}
+
+char* element_from_index(hash_table_key_list_t key_list, int index, int dimension) {
+
+  if ( key_list != NULL ) {
+
+    int i = 0;
+    char *string = malloc((dimension + 2) * sizeof(char));
+    if ( string == NULL ) {
+      fprintf(stderr, "Unable to create a string");
+      abort();
+    }
+
+    while (key_list != NULL ) {
+      
+      if ( i == index ) {
+        strcpy(string, key_list->key);
+        break;
+      }
+
+      i++;
+      key_list = key_list->next; 
+    }
+
+    return string;
+  }
+  
+  return NULL;
+}
+
+int* array_adj(bloom_filter_t bloom_filter, int index, hash_table_key_list_t key_list, size_t dimension) { 
+  
+  size_t i, j;
+  char *sub_kmer = NULL, **edge = NULL, *node = NULL;
+  int *array = malloc(NUM_BASE * sizeof(char));
+  
+  if ( array == NULL ) {
+    fprintf(stderr, "Unable to create array");
+    abort();
+  }
+  
+  node = element_from_index(key_list, index, dimension);
+  sub_kmer = substr(node, 1, strlen(node));
+  edge = kmer_append(sub_kmer);
+   
+  j = 0;
+  for ( i = 0; i < NUM_BASE; i++ ) {
+    if ( bloom_filter_get(bloom_filter, edge[i]) )
+      array[j] = index_from_element(key_list, edge[i]);
+    else
+      array[j] = -2;
+    
+    j++;
+    free(*(edge + i));
+  }
+
+  free(node);
+  free(edge);
+  free(sub_kmer);
+
+  return array;
+}
+
+int out_degree(bloom_filter_t bloom_filter, char *node) {
+
+  if ( bloom_filter != NULL ) {
+    
+    size_t i;
+    int grade = 0;
+    char *sub_kmer = NULL, **edge = NULL;
+
+    sub_kmer = substr(node, 1, strlen(node));
+    edge = kmer_append(sub_kmer);
+
+    for ( i = 0; i < NUM_BASE; i++ ) {
+      if ( bloom_filter_get(bloom_filter, edge[i]) )
+        grade++;
+
+      free(*(edge + i));
+    }
+
+    free(edge);
+    free(sub_kmer);
+
+    return grade;
+  }
+
+  return -1;  
+}
+
+int in_degree(bloom_filter_t bloom_filter, char *node) {
+
+  if ( bloom_filter != NULL ) {
+    
+    size_t i;
+    int grade = 0;
+    char *sub_kmer = NULL, **edge = NULL;
+
+    sub_kmer = substr(node, 0, strlen(node) - 2);
+    edge = kmer_prepend(sub_kmer);
+
+    for ( i = 0; i < NUM_BASE; i++ ) {
+      if ( bloom_filter_get(bloom_filter, edge[i]) )
+        grade++;
+      
+      free(*(edge + i));
+    }
+
+    free(edge);
+    free(sub_kmer);
+
+    return grade;
+  }
+
+  return -1; 
+}
+
+int* all_in_degree(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, size_t dimension) {
+
+  if ( bloom_filter != NULL && key_list != NULL ) {
+
+    size_t i = 0;
+    int *array = malloc(dimension * sizeof(int));
+    if ( array == NULL ) {
+      fprintf(stderr, "Unable to create the array");
+      abort();
+    }
+
+    while ( key_list != NULL ) {
+      array[i] = in_degree(bloom_filter, key_list->key);
+      i++;
+      key_list = key_list->next;
+    }
+
+    return array;
+  }
+
+  return NULL;
+}
+
+int* all_out_degree(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, size_t dimension) {
+
+  if ( bloom_filter != NULL && key_list != NULL ) {
+
+    size_t i = 0;
+    int *array = malloc(dimension * sizeof(int));
+    if ( array == NULL ) {
+      fprintf(stderr, "Unable to create the array");
+      abort();
+    }
+
+    while ( key_list != NULL ) {
+      array[i] = out_degree(bloom_filter, key_list->key);
+      i++;
+      key_list = key_list->next;
+    }
+
+    return array;
+  }
+
+  return NULL;
+}
+
+int is_eulerian(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, size_t dimension, int *first_node, int *last_node) {
+
+  if ( bloom_filter != NULL && key_list != NULL ) {
+    
+    size_t i;
+    int eulerian = 1;
+    int *array_out_degree = NULL, *array_in_degree = NULL;
+
+    *first_node = -1; 
+    *last_node = -1;
+
+    array_out_degree = all_out_degree(bloom_filter, key_list, dimension);
+    array_in_degree = all_in_degree(bloom_filter, key_list, dimension);
+    
+    for ( i = 0; i < dimension && eulerian; i++) {
+      if ( array_in_degree[i] == array_out_degree[i] )
+        continue;
+
+      if ( (array_in_degree[i] > array_out_degree[i] + 1) || (array_out_degree[i] > array_in_degree[i] + 1) ) 
+        eulerian = 0;
+      
+      if (array_in_degree[i] == array_out_degree[i] + 1) {
+        if ( *last_node == -1 ) 
+          *last_node = i;
+        else 
+          eulerian = 0;
+      }
+
+      if ( array_out_degree[i] == array_in_degree[i] + 1) {
+        if ( *first_node == -1 ) 
+          *first_node = i;
+        else
+          eulerian = 0;
+      }
+    }
+
+    if(*first_node == -1 && *last_node == -1) {
+      *first_node = 0;
+      *last_node = 0;
+    }
+
+    if (*first_node == -1 || *last_node == -1) 
+      eulerian = 0;
+
+    free(array_out_degree);
+    free(array_in_degree);
+
+    return eulerian;
+  }
+
+  return -1;
+}
+
+eulerian_path_t build_path(const int* const first_node, sstack_t *stack) {
+  
+  eulerian_path_t head = NULL;
+  eulerian_path_t new_head = NULL;
+  int current;
+
+  head = malloc(sizeof(eulerian_path_t));
+  head->id = *first_node;
+  head->next = NULL;
+  current = *first_node;
+  
+  while ( !stack_is_empty(stack[current]) ) { 
+    current = stack_pop(stack[current]);
+    
+    new_head = malloc(sizeof(eulerian_path_t));
+    new_head->id = current;
+    new_head->next = head;
+    head = new_head;
+  }
+
+  return head;
+}
+
+void build_cycle(sstack_t *stack, eulerian_path_t head, int *path) {
+
+  int current;
+  size_t i = 0;
+  eulerian_path_t new_head = NULL;
+    
+  while(head != NULL){
+    
+    current = head->id;
+    
+    if ( !stack_is_empty(stack[current]) ) {
+      new_head = malloc(sizeof(eulerian_path_t));
+      new_head->id = stack_pop(stack[current]);
+      new_head->next = head;
+      head = new_head;
+    }
+    else{  
+      eulerian_path_t tmp = head;
+      head = head->next;
+      path[i] = current;
+      i++;
+      free(tmp);
+    }
+  }
+}
+
+void reverese_array(int arr[], int start, int end) {
+
+  int temp; 
+
+  while ( start < end ) {
+    temp = arr[start];
+    arr[start] = arr[end];
+    arr[end] = temp;
+
+    start++;
+    end--;
+  }    
+}
+
+void print_graph(FILE *file, bloom_filter_t bloom_filter, hash_table_key_list_t key_list) {
+
+  size_t i;
+  char *sub_kmer = NULL, **edge = NULL;
+  
+  fprintf(file, "digraph G {\n");
+
+  while ( key_list != NULL ) {
+    sub_kmer = substr(key_list->key, 1, strlen(key_list->key));
+    edge = kmer_append(sub_kmer);
+
+    for ( i = 0; i < NUM_BASE; i++ ) {
+      if ( bloom_filter_get(bloom_filter, edge[i]) ) {
+        fprintf(file, "  %s ", key_list->key);
+        fprintf(file, "-> ");
+        fprintf(file, "%s\n", edge[i]);
+      }
+      free(*(edge + i));
+    }
+
+    free(sub_kmer);
+    free(edge);
+
+    key_list = key_list->next;
+  }
+
+  fprintf(file, "}");
+}
+
+char* genome_recostruction(int *path, hash_table_key_list_t key_list, size_t dimension, int kmer_length) {
+
+  size_t i;
+  char* genome = NULL, tmp[50], *element = NULL;
+
+  reverese_array(path, 0, dimension - 1);
+
+  for ( i = 0; i < dimension; ++i ) {
+
+    if ( i == 0 ) {
+      element = element_from_index(key_list, path[i], kmer_length);
+      sprintf(tmp, "%s", element);
+      genome = malloc(strlen(element) + 1);
+      if ( genome == NULL ) {
+        fprintf(stderr, "Unable to allocate string");
+        abort();
+      }
+
+      genome = strcat(genome, tmp);
+    }
+    else {
+      element = element_from_index(key_list, path[i], dimension);
+      sprintf(tmp, "%c", element[strlen(element) - 1]);
+      genome = realloc(genome, strlen(genome) * sizeof(char) + strlen(tmp) * sizeof(char) + 1);
+      genome = strcat(genome, tmp);
+    }
+  }
+
+  return genome;
 }
