@@ -1,6 +1,6 @@
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
 	if ! [ -x "$(command -v dot)" ]; then
-  	apt-get install graphviz
+  	sudo apt-get install graphviz
 	fi
 
 	mkdir out/
