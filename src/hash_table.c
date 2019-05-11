@@ -157,13 +157,7 @@ hash_table_key_list_t hash_table_keys(hash_table_t hash_table) {
           abort();  
         }
 
-        p->key = strdup(node->key); /*malloc((strlen(node->key) + 2) * sizeof(char));
-        if ( p->key == NULL ) {
-          perror("Unable to allocate a key\n");
-          abort();  
-        }
-
-        strcpy(p->key, node->key); */
+        p->key = strdup(node->key);
         p->next = NULL;
 
         if ( list == NULL ) {

@@ -45,16 +45,6 @@ char** kmer_append(const char *kmer) {
   return edge;
 }
 
-/*
-static char *concatenate_char_str(char prefix, const char *str) { 
-  
-  char *ret = malloc(strlen(str) + 1); 
-  ret[0] = prefix; 
-  strcpy(ret + 1, str); 
-  
-  return ret; 
-} */
-
 char** kmer_prepend(const char *kmer) {
 
   int i;
@@ -192,16 +182,17 @@ char* element_from_index(hash_table_key_list_t key_list, int index, int dimensio
   /* if ( key_list != NULL ) { */
 
     int i = 0;
-    char *string = NULL; /* = malloc((dimension + 2) * sizeof(char));
+    char *string = malloc((dimension + 2) * sizeof(char));
     if ( string == NULL ) {
       fprintf(stderr, "Unable to create a string");
       abort();
-    } */
+    }
 
     while (key_list != NULL ) {
       
       if ( i == index ) {
-        string = strdup(key_list->key);
+        /* string = strdup(key_list->key); */
+        strcpy(string, key_list->key);
         break;
       }
 
@@ -401,12 +392,12 @@ int is_eulerian(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, siz
   return -1;
 }
 
-eulerian_path_t* build_path(const int* const first_node, sstack_t *stack) {
+eulerian_path_t build_path(const int* const first_node, sstack_t *stack) {
   
   int current;
-  eulerian_path_t *head;
+  eulerian_path_t head, new_head;
   
-  head = malloc(sizeof(eulerian_path_t*));
+  head = malloc(sizeof(struct eulerian_path_s));
   head->id = *first_node;
   head->next = NULL;
 
@@ -415,7 +406,7 @@ eulerian_path_t* build_path(const int* const first_node, sstack_t *stack) {
   while ( !stack_is_empty(stack[current]) ) {
     current = stack_pop(stack[current]);
 
-    eulerian_path_t *new_head = malloc(sizeof(eulerian_path_t*));
+    new_head = malloc(sizeof(struct eulerian_path_s));
     new_head->id = current;
     new_head->next = head;
     head = new_head;
@@ -423,7 +414,8 @@ eulerian_path_t* build_path(const int* const first_node, sstack_t *stack) {
   
   return head;
 }
-/*
+
+
 void build_cycle(sstack_t *stack, eulerian_path_t head, int *path) {
 
   int current;
@@ -440,15 +432,13 @@ void build_cycle(sstack_t *stack, eulerian_path_t head, int *path) {
       new_head->next = head;
       head = new_head;
     }
-    else {  
-      eulerian_path_t tmp = head;
+    else {
       head = head->next;
       path[i] = current;
       i++;
-      free(tmp);
     }
   }
-} */
+}
 
 void reverese_array(int arr[], int start, int end) {
 
@@ -493,7 +483,6 @@ void print_graph(FILE *file, bloom_filter_t bloom_filter, hash_table_key_list_t 
   fprintf(file, "}");
 }
 
-/*
 char* genome_recostruction(int *path, hash_table_key_list_t key_list, size_t dimension, int kmer_length) {
 
   size_t i;
@@ -502,26 +491,16 @@ char* genome_recostruction(int *path, hash_table_key_list_t key_list, size_t dim
   reverese_array(path, 0, dimension - 1);
 
   for ( i = 0; i < dimension; ++i ) {
+    element = element_from_index(key_list, path[i], kmer_length);
 
-    if ( i == 0 ) {
-      element = element_from_index(key_list, path[i], kmer_length);
-      sprintf(tmp, "%s", element);
-      genome = malloc(strlen(element) + 1);
-      if ( genome == NULL ) {
-        fprintf(stderr, "Unable to allocate string");
-        abort();
-      }
-
-      genome = strcat(genome, tmp);
-    }
+    if ( i == 0 ) genome = element;
     else {
-      element = element_from_index(key_list, path[i], dimension);
       sprintf(tmp, "%c", element[strlen(element) - 1]);
-      genome = realloc(genome, strlen(genome) * sizeof(char) + strlen(tmp) * sizeof(char) + 1);
+      genome = realloc(genome, strlen(genome) * sizeof(char) + strlen(tmp) * sizeof(char) + 2);
       genome = strcat(genome, tmp);
     }
   }
 
   free(element);
   return genome;
-}*/
+}

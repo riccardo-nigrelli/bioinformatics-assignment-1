@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
   clock_t begin, end;
 
   sstack_t *stack = NULL;
-  eulerian_path_t *head = NULL;
+  eulerian_path_t head = NULL;
   hash_table_t hash_table = NULL;
   bloom_filter_t bloom_filter = NULL;
   hash_table_key_list_t key_list = NULL; 
@@ -173,8 +173,7 @@ int main(int argc, char **argv) {
       free(adj);
     }
     
-    head = build_path(&first, stack);
-    /*
+    head = build_path(&first, stack);    
     path = malloc(hash_table_size(hash_table) * sizeof(int));
     if ( path == NULL ) {
       fprintf(stderr, "Unable to allocate an array");
@@ -194,7 +193,7 @@ int main(int argc, char **argv) {
       if ( cnt % 60 == 0) printf("\n");
 
       i++;
-    } */
+    }
 
     for ( i = 0; i < hash_table_size(hash_table); i++ )
       stack_destroy(stack[i]);
@@ -202,7 +201,7 @@ int main(int argc, char **argv) {
 
     memory_end = getCurrentRSS();
     end = clock();
-    
+
     printf("\n\n============================================================\n");
     printf("Time elapse for computing the genome: %f seconds\n", (double)(end - begin) / CLOCKS_PER_SEC);
     printf("Total memory used for computing the genoma is: ~%.2f KB\n", (double)((memory_end - memory_start) / 1024));
@@ -210,6 +209,7 @@ int main(int argc, char **argv) {
     free(path);
     free(line);
     free(head);
+    free(genome);
     free(path_file);
     destroy_key_list(key_list);
     hash_table_destroy(hash_table);
