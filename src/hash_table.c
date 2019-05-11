@@ -1,3 +1,7 @@
+#define _GNU_SOURCE
+#if defined(unix) || defined(__unix__) || defined(__unix)
+  #define _POSIX_C_SOURCE >= 200809L
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,8 +82,8 @@ void hash_table_put(hash_table_t hash_table, char *key, unsigned int value) {
 
     if ( node == NULL ) {
       node = malloc(sizeof(hash_table_list_node_t));
-      node->key = malloc((strlen(key) + 1) * sizeof(char *));
-      strcpy(node->key, key);
+      node->key = strdup(key); /* malloc((strlen(key) + 1) * sizeof(char *));
+      strcpy(node->key, key); */
       node->value = value;
       node->next = hash_table->slots[hash].head;
       hash_table->slots[hash].head = node;
@@ -153,13 +157,13 @@ hash_table_key_list_t hash_table_keys(hash_table_t hash_table) {
           abort();  
         }
 
-        p->key = malloc((strlen(node->key) + 2) * sizeof(char));
+        p->key = strdup(node->key); /*malloc((strlen(node->key) + 2) * sizeof(char));
         if ( p->key == NULL ) {
           perror("Unable to allocate a key\n");
           abort();  
         }
 
-        strcpy(p->key, node->key);
+        strcpy(p->key, node->key); */
         p->next = NULL;
 
         if ( list == NULL ) {

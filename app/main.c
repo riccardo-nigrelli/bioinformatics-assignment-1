@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
   clock_t begin, end;
 
   sstack_t *stack = NULL;
-  eulerian_path_t head = NULL;
+  eulerian_path_t *head = NULL;
   hash_table_t hash_table = NULL;
   bloom_filter_t bloom_filter = NULL;
   hash_table_key_list_t key_list = NULL; 
@@ -106,14 +106,14 @@ int main(int argc, char **argv) {
   printf("Hash Table filled correctly, final size: %lu\n", hash_table_size(hash_table)); 
    
   printf("Remove all %d-mer with value equal to one... ", kmer_length);
-  
+/*  
   key_list = hash_table_keys(hash_table);
   while ( key_list != NULL ) {
     if ( hash_table_get(hash_table, key_list->key) == 1) {
       hash_table_delete(hash_table, key_list->key);
     }
     key_list = key_list->next;
-  }
+  } */
  
   printf("OK\n");
   printf("Hash Table size after removing of %d-mer with value one: %lu\n", kmer_length, hash_table_size(hash_table));
@@ -132,7 +132,6 @@ int main(int argc, char **argv) {
 
   key_list = hash_table_keys(hash_table);
   eulerian = is_eulerian(bloom_filter, key_list, hash_table_size(hash_table), &first, &last);
-
 
   if ( eulerian ) {
     
@@ -173,10 +172,15 @@ int main(int argc, char **argv) {
       
       free(adj);
     }
-    /*
-    head = build_path(&first, stack);
     
+    head = build_path(&first, stack);
+    /*
     path = malloc(hash_table_size(hash_table) * sizeof(int));
+    if ( path == NULL ) {
+      fprintf(stderr, "Unable to allocate an array");
+      abort();
+    }
+
     build_cycle(stack, head, path);
 
     printf("\nGenome reconstruction:\n");
@@ -190,13 +194,12 @@ int main(int argc, char **argv) {
       if ( cnt % 60 == 0) printf("\n");
 
       i++;
-    } 
+    } */
 
-    for ( i = 0; i < hash_table_size(hash_table); i++ ) {
+    for ( i = 0; i < hash_table_size(hash_table); i++ )
       stack_destroy(stack[i]);
-    }
     free(stack);
-*/
+
     memory_end = getCurrentRSS();
     end = clock();
     
@@ -206,6 +209,7 @@ int main(int argc, char **argv) {
 
     free(path);
     free(line);
+    free(head);
     free(path_file);
     destroy_key_list(key_list);
     hash_table_destroy(hash_table);

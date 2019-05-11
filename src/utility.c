@@ -1,3 +1,7 @@
+#define _GNU_SOURCE
+#if defined(unix) || defined(__unix__) || defined(__unix)
+  #define _POSIX_C_SOURCE >= 200809L
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -185,19 +189,19 @@ int index_from_element(hash_table_key_list_t key_list, char *node) {
 
 char* element_from_index(hash_table_key_list_t key_list, int index, int dimension) {
 
-  if ( key_list != NULL ) {
+  /* if ( key_list != NULL ) { */
 
     int i = 0;
-    char *string = malloc((dimension + 2) * sizeof(char));
+    char *string = NULL; /* = malloc((dimension + 2) * sizeof(char));
     if ( string == NULL ) {
       fprintf(stderr, "Unable to create a string");
       abort();
-    }
+    } */
 
     while (key_list != NULL ) {
       
       if ( i == index ) {
-        strcpy(string, key_list->key);
+        string = strdup(key_list->key);
         break;
       }
 
@@ -206,16 +210,16 @@ char* element_from_index(hash_table_key_list_t key_list, int index, int dimensio
     }
 
     return string;
-  }
+  /* }
   
-  return NULL;
+  return NULL; */
 }
 
 int* array_adj(bloom_filter_t bloom_filter, int index, hash_table_key_list_t key_list, size_t dimension) { 
   
   size_t i, j;
   char *sub_kmer = NULL, **edge = NULL, *node = NULL;
-  int *array = malloc(NUM_BASE * sizeof(char));
+  int *array = malloc(NUM_BASE * sizeof(int));
   
   if ( array == NULL ) {
     fprintf(stderr, "Unable to create array");
@@ -397,36 +401,36 @@ int is_eulerian(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, siz
   return -1;
 }
 
-eulerian_path_t build_path(const int* const first_node, sstack_t *stack) {
+eulerian_path_t* build_path(const int* const first_node, sstack_t *stack) {
   
-  eulerian_path_t head = NULL;
-  eulerian_path_t new_head = NULL;
   int current;
-
-  head = malloc(sizeof(eulerian_path_t));
+  eulerian_path_t *head;
+  
+  head = malloc(sizeof(eulerian_path_t*));
   head->id = *first_node;
   head->next = NULL;
+
   current = *first_node;
-  
-  while ( !stack_is_empty(stack[current]) ) { 
+
+  while ( !stack_is_empty(stack[current]) ) {
     current = stack_pop(stack[current]);
-    
-    new_head = malloc(sizeof(eulerian_path_t));
+
+    eulerian_path_t *new_head = malloc(sizeof(eulerian_path_t*));
     new_head->id = current;
     new_head->next = head;
     head = new_head;
   }
-
+  
   return head;
 }
-
+/*
 void build_cycle(sstack_t *stack, eulerian_path_t head, int *path) {
 
   int current;
   size_t i = 0;
   eulerian_path_t new_head = NULL;
     
-  while(head != NULL){
+  while ( head != NULL ) {
     
     current = head->id;
     
@@ -436,7 +440,7 @@ void build_cycle(sstack_t *stack, eulerian_path_t head, int *path) {
       new_head->next = head;
       head = new_head;
     }
-    else{  
+    else {  
       eulerian_path_t tmp = head;
       head = head->next;
       path[i] = current;
@@ -444,7 +448,7 @@ void build_cycle(sstack_t *stack, eulerian_path_t head, int *path) {
       free(tmp);
     }
   }
-}
+} */
 
 void reverese_array(int arr[], int start, int end) {
 
@@ -489,6 +493,7 @@ void print_graph(FILE *file, bloom_filter_t bloom_filter, hash_table_key_list_t 
   fprintf(file, "}");
 }
 
+/*
 char* genome_recostruction(int *path, hash_table_key_list_t key_list, size_t dimension, int kmer_length) {
 
   size_t i;
@@ -517,5 +522,6 @@ char* genome_recostruction(int *path, hash_table_key_list_t key_list, size_t dim
     }
   }
 
+  free(element);
   return genome;
-}
+}*/
