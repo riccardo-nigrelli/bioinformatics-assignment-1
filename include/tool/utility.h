@@ -16,11 +16,11 @@
 
   void help_menu();
   char* parse_argument(int argc, char **argv, int *quality, int *kmer_length, int *reads_length);
-  int* array_adj(bloom_filter_t bloom_filter, int index, hash_table_key_list_t key_list, size_t dimension);
+  int* array_adj(bloom_filter_t bloom_filter, int index, hash_table_key_list_t key_list);
   int is_eulerian(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, size_t dimension, int *first_node, int *last_node);
   eulerian_path_t build_path(const int* const first_node, sstack_t *stack);
   void build_cycle(sstack_t *stack, eulerian_path_t head, int *path);
   void print_graph(FILE *file, bloom_filter_t bloom_filter, hash_table_key_list_t key_list);
-  char* genome_recostruction(int *path, hash_table_key_list_t key_list, size_t dimension, int kmer_length);
+  char* genome_recostruction(int *path, hash_table_key_list_t key_list, size_t dimension);
 
 #endif /* UTILITY_H */

@@ -19,22 +19,6 @@
 
 #define NUM_BASE 4
 
-void destroy_key_list(hash_table_key_list_t key_list) {
-
-  hash_table_key_list_node_t *current = NULL;
-
-  if ( key_list == NULL ) return;
-
-  while ( key_list != NULL ) {
-    current = key_list; 
-    key_list = key_list->next; 
-    free(current->key);
-    free(current);      
-  }
-
-  key_list = NULL;
-}
-
 unsigned int (*hash_function[])(char *, unsigned int) = {
   RSHash, JSHash, PJWHash, ELFHash, BKDRHash, SDBMHash, DJBHash, DEKHash, BPHash, FNVHash, APHash	
 };
@@ -147,13 +131,13 @@ int main(int argc, char **argv) {
     
     fclose(file);
     printf("OK\n");
-    /*
+
     system("dot -Tpdf out/graph.dot > out/graph.pdf");
     #if defined(__APPLE__) || defined(__MACH__)
       system("open out/graph.pdf");
     #elif defined(unix) || defined(__unix__) || defined(__unix)
       system("xdg-open out/graph.pdf");
-    #endif */
+    #endif
   
     stack = malloc(hash_table_size(hash_table) * sizeof(sstack_t *));
     if ( stack == NULL ) {
@@ -163,7 +147,7 @@ int main(int argc, char **argv) {
 
     for ( i = 0; i < hash_table_size(hash_table); ++i ) {
       stack[i] = stack_create();
-      adj = array_adj(bloom_filter, i, key_list, hash_table_size(hash_table));
+      adj = array_adj(bloom_filter, i, key_list);
       
       for (j = 0; j < NUM_BASE; ++j ) {
         if ( adj[j] != -2 )
@@ -183,7 +167,7 @@ int main(int argc, char **argv) {
     build_cycle(stack, head, path);
 
     printf("\nGenome reconstruction:\n");
-    genome = genome_recostruction(path, key_list, hash_table_size(hash_table), kmer_length);
+    genome = genome_recostruction(path, key_list, hash_table_size(hash_table));
     
     i = 0;
     while ( genome[i] != '\0' ) {
@@ -195,16 +179,12 @@ int main(int argc, char **argv) {
       i++;
     }
 
+    memory_end = getCurrentRSS();
+    
+
     for ( i = 0; i < hash_table_size(hash_table); i++ )
       stack_destroy(stack[i]);
     free(stack);
-
-    memory_end = getCurrentRSS();
-    end = clock();
-
-    printf("\n\n============================================================\n");
-    printf("Time elapse for computing the genome: %f seconds\n", (double)(end - begin) / CLOCKS_PER_SEC);
-    printf("Total memory used for computing the genoma is: ~%.2f KB\n", (double)((memory_end - memory_start) / 1024));
 
     free(path);
     free(line);
@@ -221,6 +201,12 @@ int main(int argc, char **argv) {
     destroy_key_list(key_list);
     hash_table_destroy(hash_table);
     bloom_filter_destroy(bloom_filter);
+
+    end = clock();
+
+    printf("\n\n============================================================\n");
+    printf("Time elapse for computing the genome: %.5f seconds\n", (double)(end - begin) / CLOCKS_PER_SEC);
+    printf("Total memory used for computing the genoma is: ~%.2f KB\n", (double)((memory_end - memory_start) / 1024));
   }
   else {
     fprintf(stderr, "ERROR: The graph is not eulerian");

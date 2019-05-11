@@ -82,8 +82,7 @@ void hash_table_put(hash_table_t hash_table, char *key, unsigned int value) {
 
     if ( node == NULL ) {
       node = malloc(sizeof(hash_table_list_node_t));
-      node->key = strdup(key); /* malloc((strlen(key) + 1) * sizeof(char *));
-      strcpy(node->key, key); */
+      node->key = strdup(key);
       node->value = value;
       node->next = hash_table->slots[hash].head;
       hash_table->slots[hash].head = node;
@@ -172,11 +171,23 @@ hash_table_key_list_t hash_table_keys(hash_table_t hash_table) {
       }
       
       index++;
-      free(node);
     }
   }
 
   return list; 
+}
+
+void destroy_key_list(hash_table_key_list_t key_list) {
+
+  hash_table_key_list_t current = NULL;
+
+  current = key_list;
+  while ( current != NULL ) {
+    key_list = current->next; 
+    free(current->key);
+    free(current);
+    current = key_list;
+  }
 }
 
 int str_compare(const void* a, const void* b) {

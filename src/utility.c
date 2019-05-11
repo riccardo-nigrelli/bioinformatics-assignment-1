@@ -177,36 +177,26 @@ static int index_from_element(hash_table_key_list_t key_list, char *node) {
   return -1;
 }
 
-static char* element_from_index(hash_table_key_list_t key_list, int index, int dimension) {
+static char* element_from_index(hash_table_key_list_t key_list, int index) {
 
-  /* if ( key_list != NULL ) { */
-
-    int i = 0;
-    char *string = malloc((dimension + 2) * sizeof(char));
-    if ( string == NULL ) {
-      fprintf(stderr, "Unable to create a string");
-      abort();
-    }
-
-    while (key_list != NULL ) {
-      
-      if ( i == index ) {
-        /* string = strdup(key_list->key); */
-        strcpy(string, key_list->key);
-        break;
-      }
-
-      i++;
-      key_list = key_list->next; 
-    }
-
-    return string;
-  /* }
+  int i = 0;
+  char *string = NULL;
   
-  return NULL; */
+  while ( key_list != NULL ) {
+    
+    if ( i == index ) {
+      string = strdup(key_list->key);
+      break;
+    }
+
+    i++;
+    key_list = key_list->next; 
+  }
+
+  return string;
 }
 
-int* array_adj(bloom_filter_t bloom_filter, int index, hash_table_key_list_t key_list, size_t dimension) { 
+int* array_adj(bloom_filter_t bloom_filter, int index, hash_table_key_list_t key_list) { 
   
   size_t i, j;
   char *sub_kmer = NULL, **edge = NULL, *node = NULL;
@@ -217,7 +207,7 @@ int* array_adj(bloom_filter_t bloom_filter, int index, hash_table_key_list_t key
     abort();
   }
   
-  node = element_from_index(key_list, index, dimension);
+  node = element_from_index(key_list, index);
   sub_kmer = substr(node, 1, strlen(node));
   edge = kmer_append(sub_kmer);
    
@@ -483,24 +473,23 @@ void print_graph(FILE *file, bloom_filter_t bloom_filter, hash_table_key_list_t 
   fprintf(file, "}");
 }
 
-char* genome_recostruction(int *path, hash_table_key_list_t key_list, size_t dimension, int kmer_length) {
+char* genome_recostruction(int *path, hash_table_key_list_t key_list, size_t dimension) {
 
   size_t i;
-  char* genome = NULL, tmp[50], *element = NULL;
+  char *genome = NULL, *element = NULL, tmp[10];
 
   reverese_array(path, 0, dimension - 1);
+  genome = element_from_index(key_list, path[0]);
 
-  for ( i = 0; i < dimension; ++i ) {
-    element = element_from_index(key_list, path[i], kmer_length);
+  for ( i = 1; i < dimension; ++i ) {
+    element = element_from_index(key_list, path[i]);
+    
+    sprintf(tmp, "%c", element[strlen(element) - 1]);
+    genome = realloc(genome, strlen(genome) * sizeof(char) + strlen(tmp) * sizeof(char) + 2);
+    genome = strcat(genome, tmp);
 
-    if ( i == 0 ) genome = element;
-    else {
-      sprintf(tmp, "%c", element[strlen(element) - 1]);
-      genome = realloc(genome, strlen(genome) * sizeof(char) + strlen(tmp) * sizeof(char) + 2);
-      genome = strcat(genome, tmp);
-    }
+    free(element);
   }
-
-  free(element);
+  
   return genome;
 }
