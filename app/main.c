@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
   clock_t begin, end;
 
   sstack_t *stack = NULL;
-  eulerian_path_t head = NULL;
+  eulerian_path_t head = NULL, tmp = NULL;
   hash_table_t hash_table = NULL;
   bloom_filter_t bloom_filter = NULL;
   hash_table_key_list_t key_list = NULL; 
@@ -208,7 +208,14 @@ int main(int argc, char **argv) {
 
     free(path);
     free(line);
-    free(head);
+
+    tmp = head;
+    while ( tmp != NULL ) {
+      head = tmp->next;
+      free(tmp);
+      tmp = head;
+    }
+
     free(genome);
     free(path_file);
     destroy_key_list(key_list);

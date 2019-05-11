@@ -9,7 +9,7 @@
 #include <adt/stack.h>
 #include <adt/hash_table.h>
 #include <pds/bloom_filter.h>
-#include "utility_private.h"
+#include <tool/utility.h>
 
 #define NUM_BASE 4
 #define KMER_LENGTH_DEFAULT 31
@@ -19,7 +19,7 @@
 
 const char base_array[NUM_BASE] = {'A', 'C', 'G', 'T'};
 
-char* substr(const char *string, size_t start, size_t end) {
+static char* substr(const char *string, size_t start, size_t end) {
   
   const char *char_start = &string[start];
   const char *char_end = &string[end];
@@ -30,7 +30,7 @@ char* substr(const char *string, size_t start, size_t end) {
   return substring;
 } 
 
-char** kmer_append(const char *kmer) {
+static char** kmer_append(const char *kmer) {
 
   int i;
   char **edge = malloc(NUM_BASE * sizeof(char *));
@@ -45,7 +45,7 @@ char** kmer_append(const char *kmer) {
   return edge;
 }
 
-char** kmer_prepend(const char *kmer) {
+static char** kmer_prepend(const char *kmer) {
 
   int i;
   char **edge = malloc(NUM_BASE * sizeof(char *));
@@ -157,7 +157,7 @@ char* parse_argument(int argc, char **argv, int *quality, int *kmer_length, int 
   return path_file;
 }
 
-int index_from_element(hash_table_key_list_t key_list, char *node) {
+static int index_from_element(hash_table_key_list_t key_list, char *node) {
 
   if ( key_list != NULL ) {
 
@@ -177,7 +177,7 @@ int index_from_element(hash_table_key_list_t key_list, char *node) {
   return -1;
 }
 
-char* element_from_index(hash_table_key_list_t key_list, int index, int dimension) {
+static char* element_from_index(hash_table_key_list_t key_list, int index, int dimension) {
 
   /* if ( key_list != NULL ) { */
 
@@ -239,7 +239,7 @@ int* array_adj(bloom_filter_t bloom_filter, int index, hash_table_key_list_t key
   return array;
 }
 
-int out_degree(bloom_filter_t bloom_filter, char *node) {
+static int out_degree(bloom_filter_t bloom_filter, char *node) {
 
   if ( bloom_filter != NULL ) {
     
@@ -266,7 +266,7 @@ int out_degree(bloom_filter_t bloom_filter, char *node) {
   return -1;  
 }
 
-int in_degree(bloom_filter_t bloom_filter, char *node) {
+static int in_degree(bloom_filter_t bloom_filter, char *node) {
 
   if ( bloom_filter != NULL ) {
     
@@ -293,7 +293,7 @@ int in_degree(bloom_filter_t bloom_filter, char *node) {
   return -1; 
 }
 
-int* all_in_degree(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, size_t dimension) {
+static int* all_in_degree(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, size_t dimension) {
 
   if ( bloom_filter != NULL && key_list != NULL ) {
 
@@ -316,7 +316,7 @@ int* all_in_degree(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, 
   return NULL;
 }
 
-int* all_out_degree(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, size_t dimension) {
+static int* all_out_degree(bloom_filter_t bloom_filter, hash_table_key_list_t key_list, size_t dimension) {
 
   if ( bloom_filter != NULL && key_list != NULL ) {
 
