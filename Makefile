@@ -1,4 +1,4 @@
-CFLAGS+=-Wall -Wextra -ansi -pedantic -I"$(PWD)/include" # -I/usr/include/python2.7 -lpython2.7
+CFLAGS+=-Wall -Wextra -ansi -pedantic -I"$(PWD)/include"
 
 export CFLAGS
 
