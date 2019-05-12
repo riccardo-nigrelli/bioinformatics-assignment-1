@@ -8,11 +8,12 @@
   #include <stdio.h>
   #include <pds/bloom_filter.h>
 
+  /** \brief Defines the structure of the bloom filter. */
   struct bloom_filter_s {
-    uint64_t *bit_vector;
-    size_t dimension;
-    unsigned int (**hash_function)(char *, unsigned int);
-    size_t num_hash_function;
+    uint64_t *bit_vector; /**< The bit vector. */
+    size_t dimension; /**< The dimension of the bit vector. */
+    unsigned int (**hash_function)(char *, unsigned int); /**< The array of hash function pointer. */
+    size_t num_hash_function; /**< The number of hash function that you want to use */
   };
 
 #endif /* BLOOM_FILTER_PRIVATE_H */

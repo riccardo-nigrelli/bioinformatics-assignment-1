@@ -33,7 +33,7 @@
    * \brief Remove and return an element from the top of the given stack.
    *
    * \param stack The stack from which removing an element.
-   * \retunr The removed element
+   * \return The removed element
    */
   int stack_pop(sstack_t stack);
   
