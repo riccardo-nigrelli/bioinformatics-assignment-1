@@ -90,14 +90,14 @@ int main(int argc, char **argv) {
   printf("Hash Table filled correctly, final size: %lu\n", hash_table_size(hash_table)); 
    
   printf("Remove all %d-mer with value equal to one... ", kmer_length);
-/*  
+ 
   key_list = hash_table_keys(hash_table);
   while ( key_list != NULL ) {
     if ( hash_table_get(hash_table, key_list->key) == 1) {
       hash_table_delete(hash_table, key_list->key);
     }
     key_list = key_list->next;
-  } */
+  }
  
   printf("OK\n");
   printf("Hash Table size after removing of %d-mer with value one: %lu\n", kmer_length, hash_table_size(hash_table));
