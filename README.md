@@ -9,8 +9,25 @@
   </a>
 </p>
 
+<p>
+Through this repository the user can reconstruct the DNA of a gene by starting from a FASTQ file.
+The tool fundamentally is a pipeline formed by three steps: 
+</p>
+<ul>
+<li>Reads trimming</li>
+<li>Building of the De Bruijn Graph</li>
+<li>Recostruction of the DNA via a graph visit</li>
+</ul>
+
 <h4> Prerequisites </h4>
 <p>To use this tool you need to have <a href="https://graphviz.org/"> graphviz </a> installed.</p>
+
+<h4> Installation </h4>
+<ul>
+  <li>Download or clone the repository</li>
+  <li>Run the <code>dependencies.sh</code> file to complete the initial setup</li>
+  <li>Compile and run the tool using the commands in the table below</li>
+</ul>
 
 <h4> Usage commands </h4>
 <table>
